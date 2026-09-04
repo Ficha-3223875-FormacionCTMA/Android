@@ -1,4 +1,4 @@
-package com.esteban.miformacionctma
+package com.esteban.miformacionctma.data
 
 data class Actividad(
     val id: Int,
