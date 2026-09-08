@@ -22,5 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "EvaluacionSemana5"
+rootProject.name = "Mi Formacion CTMA"
 include(":app")
+ 

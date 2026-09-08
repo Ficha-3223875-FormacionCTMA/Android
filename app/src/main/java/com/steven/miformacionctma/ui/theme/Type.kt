@@ -1,4 +1,4 @@
-package com.tuinstitucion.evaluacion.ui.theme
+package com.steven.miformacionctma.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
