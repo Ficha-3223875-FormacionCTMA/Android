@@ -6,5 +6,6 @@ data class Actividad(
     val descripcion: String,
     val fecha: String,
     val prioridad: String,
-    val progreso: Int
+    val progreso: Int,
+    val categoriaId: Int
 )
