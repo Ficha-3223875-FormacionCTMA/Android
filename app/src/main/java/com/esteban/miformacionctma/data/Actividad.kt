@@ -1,4 +1,4 @@
-package com.esteban.miformacionctma
+package com.esteban.miformacionctma.data
 
 data class Actividad(
     val id: Int,
@@ -6,5 +6,6 @@ data class Actividad(
     val descripcion: String,
     val fecha: String,
     val prioridad: String,
-    val progreso: Int
+    val progreso: Int,
+    val categoriaId: Int
 )

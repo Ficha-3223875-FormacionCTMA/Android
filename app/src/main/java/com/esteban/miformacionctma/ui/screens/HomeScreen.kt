@@ -10,139 +10,85 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.esteban.miformacionctma.data.local.entity.ActividadEntity
+import com.esteban.miformacionctma.repository.ActividadRepository
 
+private val ActividadEntity.nombre: String
+    get() {
+        TODO()
+    }
 
 data class InfoItem(
     val titulo: String,
     val descripcion: String
 )
 
-
 @Composable
-fun HomeScreen() {
-
+fun HomeScreen(
+    repository: ActividadRepository,
+    modifier: Modifier = Modifier
+) {
 
     var seccion by remember {
         mutableStateOf("inicio")
     }
 
-
     var seleccionado by remember {
         mutableStateOf<InfoItem?>(null)
     }
-
 
     var opcionScrum by remember {
         mutableStateOf("")
     }
 
-
     var opcionPrueba by remember {
         mutableStateOf("")
     }
 
-
+    // 🔌 CONEXIÓN CON LA BASE DE DATOS: observa las actividades en tiempo real
+    val actividades by repository.observarTodas()
+        .collectAsState(initial = emptyList())
 
     val valores = listOf(
-
         InfoItem(
             "Personas e interacciones",
             "Se valora la comunicación y colaboración entre personas más que depender únicamente de procesos y herramientas."
         ),
-
         InfoItem(
             "Software funcionando",
             "Un software funcional aporta más valor que una documentación extensa."
         ),
-
         InfoItem(
             "Colaboración con el cliente",
             "El cliente participa durante el desarrollo para asegurar que el producto cumpla sus necesidades."
         ),
-
         InfoItem(
             "Responder al cambio",
             "Los equipos ágiles aceptan cambios para mejorar el producto final."
         )
-
     )
-
-
 
     val principios = listOf(
-
-        InfoItem(
-            "Principio 1",
-            "Satisfacer al cliente mediante entregas tempranas y continuas de software con valor."
-        ),
-
-        InfoItem(
-            "Principio 2",
-            "Aceptar cambios en los requisitos incluso en etapas avanzadas."
-        ),
-
-        InfoItem(
-            "Principio 3",
-            "Entregar software funcional frecuentemente."
-        ),
-
-        InfoItem(
-            "Principio 4",
-            "Negocio y desarrolladores trabajan juntos."
-        ),
-
-        InfoItem(
-            "Principio 5",
-            "Construir proyectos alrededor de personas motivadas."
-        ),
-
-        InfoItem(
-            "Principio 6",
-            "La comunicación directa es la más efectiva."
-        ),
-
-        InfoItem(
-            "Principio 7",
-            "El software funcionando es la principal medida del progreso."
-        ),
-
-        InfoItem(
-            "Principio 8",
-            "Promover un desarrollo sostenible."
-        ),
-
-        InfoItem(
-            "Principio 9",
-            "Buscar excelencia técnica continuamente."
-        ),
-
-        InfoItem(
-            "Principio 10",
-            "La simplicidad es fundamental."
-        ),
-
-        InfoItem(
-            "Principio 11",
-            "Los mejores resultados vienen de equipos organizados."
-        ),
-
-        InfoItem(
-            "Principio 12",
-            "El equipo debe mejorar constantemente."
-        )
-
+        InfoItem("Principio 1", "Satisfacer al cliente mediante entregas tempranas y continuas de software con valor."),
+        InfoItem("Principio 2", "Aceptar cambios en los requisitos incluso en etapas avanzadas."),
+        InfoItem("Principio 3", "Entregar software funcional frecuentemente."),
+        InfoItem("Principio 4", "Negocio y desarrolladores trabajan juntos."),
+        InfoItem("Principio 5", "Construir proyectos alrededor de personas motivadas."),
+        InfoItem("Principio 6", "La comunicación directa es la más efectiva."),
+        InfoItem("Principio 7", "El software funcionando es la principal medida del progreso."),
+        InfoItem("Principio 8", "Promover un desarrollo sostenible."),
+        InfoItem("Principio 9", "Buscar excelencia técnica continuamente."),
+        InfoItem("Principio 10", "La simplicidad es fundamental."),
+        InfoItem("Principio 11", "Los mejores resultados vienen de equipos organizados."),
+        InfoItem("Principio 12", "El equipo debe mejorar constantemente.")
     )
-    Column(
 
-        modifier = Modifier
+    Column(
+        modifier = modifier
             .fillMaxSize()
             .padding(20.dp)
-            .verticalScroll(
-                rememberScrollState()
-            )
-
+            .verticalScroll(rememberScrollState())
     ) {
-
 
         Text(
             text = "📚 Mi Formación CTMA",
@@ -150,353 +96,175 @@ fun HomeScreen() {
             fontWeight = FontWeight.Bold
         )
 
-
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
-
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Bienvenido, Esteban 👋",
             style = MaterialTheme.typography.titleMedium
         )
 
-
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
-
-
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
-            onClick = {
-                seccion = "manifiesto"
-                seleccionado = null
-            },
+            onClick = { seccion = "manifiesto"; seleccionado = null },
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text("¿Qué es el Manifiesto Ágil?")
-
         }
 
-
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
+        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
-            onClick = {
-                seccion = "valores"
-                seleccionado = null
-            },
+            onClick = { seccion = "valores"; seleccionado = null },
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text("Valores")
-
         }
 
-
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
+        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
-            onClick = {
-                seccion = "principios"
-                seleccionado = null
-            },
+            onClick = { seccion = "principios"; seleccionado = null },
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text("Principios")
-
         }
 
-
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
+        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
-            onClick = {
-                seccion = "scrum"
-                opcionScrum = ""
-                seleccionado = null
-            },
+            onClick = { seccion = "scrum"; opcionScrum = ""; seleccionado = null },
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text("🔄 Scrum")
-
         }
 
-
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
+        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
-            onClick = {
-                seccion = "pruebas"
-                opcionPrueba = ""
-                seleccionado = null
-            },
+            onClick = { seccion = "pruebas"; opcionPrueba = ""; seleccionado = null },
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text("🧪 Pruebas de Software")
-
         }
 
+        // ⭐ BOTÓN NUEVO: sección conectada a la base de datos
+        Spacer(modifier = Modifier.height(10.dp))
 
+        Button(
+            onClick = { seccion = "actividades"; seleccionado = null },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("💾 Mis Actividades (${actividades.size})")
+        }
 
-        Spacer(
-            modifier = Modifier.height(25.dp)
-        )
+        Spacer(modifier = Modifier.height(25.dp))
 
-
-
-        when(seccion) {
-
-
+        when (seccion) {
 
             "inicio" -> {
-
-                Text(
-                    "Selecciona una opción para comenzar."
-                )
-
+                Text("Selecciona una opción para comenzar.")
             }
 
-
-
-
             "manifiesto" -> {
-
                 Text(
                     "¿Qué es el Manifiesto Ágil?",
                     style = MaterialTheme.typography.titleLarge
                 )
-
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     "Es un documento creado en 2001 que establece valores y principios para desarrollar software de forma flexible, colaborativa y adaptable."
                 )
-
             }
 
-
-
-
-
             "valores" -> {
-
-
                 Text(
                     "Los 4 Valores Ágiles",
                     style = MaterialTheme.typography.titleLarge
                 )
-
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(10.dp))
                 valores.forEach { valor ->
-
-
                     Button(
-                        onClick = {
-                            seleccionado = valor
-                        },
+                        onClick = { seleccionado = valor },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-
                         Text(valor.titulo)
-
                     }
-
-
-                    Spacer(
-                        modifier = Modifier.height(8.dp)
-                    )
-
-
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-
-
             }
 
-
-
-
-
             "principios" -> {
-
-
                 Text(
                     "Los 12 Principios Ágiles",
                     style = MaterialTheme.typography.titleLarge
                 )
-
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(10.dp))
                 principios.forEach { principio ->
-
-
                     Button(
-                        onClick = {
-                            seleccionado = principio
-                        },
+                        onClick = { seleccionado = principio },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-
                         Text(principio.titulo)
-
                     }
-
-
-                    Spacer(
-                        modifier = Modifier.height(8.dp)
-                    )
-
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-
-
-            }             "scrum" -> {
-
-
-            Text(
-                "🔄 Scrum",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-
-            Spacer(
-                modifier = Modifier.height(10.dp)
-            )
-
-
-            Button(
-                onClick = {
-                    opcionScrum = "quees"
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-
-                Text("📘 ¿Qué es Scrum?")
-
             }
 
+            "scrum" -> {
+                Text(
+                    "🔄 Scrum",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
+                Button(
+                    onClick = { opcionScrum = "quees" },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("📘 ¿Qué es Scrum?")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+                Button(
+                    onClick = { opcionScrum = "roles" },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("👥 Roles Scrum")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
+                Button(
+                    onClick = { opcionScrum = "artefactos" },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("📦 Artefactos Scrum")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = {
-                    opcionScrum = "roles"
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+                Button(
+                    onClick = { opcionScrum = "ceremonias" },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("🔄 Ceremonias Scrum")
+                }
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Text("👥 Roles Scrum")
-
-            }
-
-
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-
-            Button(
-                onClick = {
-                    opcionScrum = "artefactos"
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-
-                Text("📦 Artefactos Scrum")
-
-            }
-
-
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-
-            Button(
-                onClick = {
-                    opcionScrum = "ceremonias"
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-
-                Text("🔄 Ceremonias Scrum")
-
-            }
-
-
-
-            Spacer(
-                modifier = Modifier.height(20.dp)
-            )
-
-
-
-            when(opcionScrum){
-
-
-                "quees" -> {
-
-                    Text(
-                        """
+                when (opcionScrum) {
+                    "quees" -> {
+                        Text(
+                            """
 Scrum es un marco de trabajo ágil utilizado para desarrollar productos mediante equipos colaborativos.
 
 Trabaja con ciclos cortos llamados Sprints y se basa en transparencia, inspección y adaptación.
 
 Permite entregar valor constantemente y mejorar el proceso de desarrollo.
                             """.trimIndent()
-                    )
-
-                }
-
-
-
-                "roles" -> {
-
-                    Text(
-                        """
+                        )
+                    }
+                    "roles" -> {
+                        Text(
+                            """
 👤 Product Owner
 
 Representa al cliente.
@@ -512,16 +280,11 @@ Facilita Scrum, elimina impedimentos y ayuda al equipo.
 
 Diseñan, programan, prueban y entregan el producto.
                             """.trimIndent()
-                    )
-
-                }
-
-
-
-                "artefactos" -> {
-
-                    Text(
-                        """
+                        )
+                    }
+                    "artefactos" -> {
+                        Text(
+                            """
 📦 Product Backlog
 
 Lista ordenada de requisitos y funcionalidades.
@@ -536,16 +299,11 @@ Tareas seleccionadas para realizar durante el Sprint.
 
 Versión funcional del producto creada durante el Sprint.
                             """.trimIndent()
-                    )
-
-                }
-
-
-
-                "ceremonias" -> {
-
-                    Text(
-                        """
+                        )
+                    }
+                    "ceremonias" -> {
+                        Text(
+                            """
 🔄 Sprint
 
 Periodo donde el equipo desarrolla un incremento.
@@ -570,96 +328,44 @@ Presentación del trabajo realizado.
 
 Reunión para encontrar mejoras.
                             """.trimIndent()
-                    )
-
+                        )
+                    }
                 }
-
             }
 
-
-        }
-
-
-
-
-
             "pruebas" -> {
-
-
                 Text(
                     "🧪 Pruebas de Software",
                     style = MaterialTheme.typography.titleLarge
                 )
-
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Button(
-                    onClick = {
-                        opcionPrueba = "unitarias"
-                    },
+                    onClick = { opcionPrueba = "unitarias" },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-
                     Text("✅ Pruebas Unitarias")
-
                 }
-
-
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = {
-                        opcionPrueba = "integracion"
-                    },
+                    onClick = { opcionPrueba = "integracion" },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-
                     Text("🔗 Pruebas de Integración")
-
                 }
-
-
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-
-
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = {
-                        opcionPrueba = "funcionales"
-                    },
+                    onClick = { opcionPrueba = "funcionales" },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-
                     Text("🖥️ Pruebas Funcionales")
-
                 }
+                Spacer(modifier = Modifier.height(20.dp))
 
-
-
-                Spacer(
-                    modifier = Modifier.height(20.dp)
-                )
-
-
-
-                when(opcionPrueba){
-
-
+                when (opcionPrueba) {
                     "unitarias" -> {
-
                         Text(
                             """
 ✅ Pruebas Unitarias
@@ -672,13 +378,8 @@ Ejemplo:
 Comprobar que una función de cálculo entregue el resultado esperado.
                             """.trimIndent()
                         )
-
                     }
-
-
-
                     "integracion" -> {
-
                         Text(
                             """
 🔗 Pruebas de Integración
@@ -689,13 +390,8 @@ Ejemplo:
 Comprobar que un formulario envíe información y la guarde correctamente en la base de datos.
                             """.trimIndent()
                         )
-
                     }
-
-
-
                     "funcionales" -> {
-
                         Text(
                             """
 🖥️ Pruebas Funcionales
@@ -706,50 +402,41 @@ Ejemplo:
 Verificar que un usuario pueda iniciar sesión y utilizar las opciones principales.
                             """.trimIndent()
                         )
-
                     }
-
-
                 }
-
-
             }
 
+            // ⭐ SECCIÓN NUEVA: lee directamente de Room
+            "actividades" -> {
+                Text(
+                    "💾 Actividades guardadas en la base de datos",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
+                if (actividades.isEmpty()) {
+                    Text("No hay actividades registradas todavía.")
+                } else {
+                    actividades.forEach { actividad ->
+                        Text(
+                            "• ${actividad.nombre}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            }
         }
 
-
-
         seleccionado?.let { item ->
-
-
-            Spacer(
-                modifier = Modifier.height(25.dp)
-            )
-
-
+            Spacer(modifier = Modifier.height(25.dp))
             Text(
                 text = item.titulo,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-
-            Text(
-                text = item.descripcion
-            )
-
-
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = item.descripcion)
         }
-
-
-
     }
-
-
 }
