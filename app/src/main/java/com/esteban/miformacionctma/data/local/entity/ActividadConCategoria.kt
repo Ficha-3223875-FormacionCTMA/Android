@@ -9,5 +9,5 @@ data class ActividadConCategoria(
         parentColumn = "categoriaId",
         entityColumn = "id"
     )
-    val categoria: CategoriaEntity
+    val categoria: CategoriaEntity?
 )

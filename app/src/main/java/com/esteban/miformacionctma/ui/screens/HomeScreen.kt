@@ -44,6 +44,7 @@ fun HomeScreen(
     var opcionPrueba by remember {
         mutableStateOf("")
     }
+    val viewModel = remember { ActividadViewModel(repository) }
 
     // 🔌 CONEXIÓN CON LA BASE DE DATOS: observa las actividades en tiempo real
     val actividades by repository.observarTodas()
@@ -148,6 +149,15 @@ fun HomeScreen(
             Text("🧪 Pruebas de Software")
         }
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = { seccion = "registrar"; seleccionado = null },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("➕ Registrar actividad")
+        }
+
         // ⭐ BOTÓN NUEVO: sección conectada a la base de datos
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -164,6 +174,18 @@ fun HomeScreen(
 
             "inicio" -> {
                 Text("Selecciona una opción para comenzar.")
+            }
+
+            "registrar" -> {
+                FormularioActividad(
+                    uiState = viewModel.uiState,
+                    onTituloChange = viewModel::onTituloChange,
+                    onDescripcionChange = viewModel::onDescripcionChange,
+                    onFechaChange = viewModel::onFechaChange,
+                    onPrioridadChange = viewModel::onPrioridadChange,
+                    onProgresoChange = viewModel::onProgresoChange,
+                    onGuardar = { viewModel.guardar { seccion = "actividades" } }
+                )
             }
 
             "manifiesto" -> {
@@ -262,6 +284,7 @@ Permite entregar valor constantemente y mejorar el proceso de desarrollo.
                             """.trimIndent()
                         )
                     }
+
                     "roles" -> {
                         Text(
                             """
@@ -282,6 +305,7 @@ Diseñan, programan, prueban y entregan el producto.
                             """.trimIndent()
                         )
                     }
+
                     "artefactos" -> {
                         Text(
                             """
@@ -301,6 +325,7 @@ Versión funcional del producto creada durante el Sprint.
                             """.trimIndent()
                         )
                     }
+
                     "ceremonias" -> {
                         Text(
                             """
@@ -379,6 +404,7 @@ Comprobar que una función de cálculo entregue el resultado esperado.
                             """.trimIndent()
                         )
                     }
+
                     "integracion" -> {
                         Text(
                             """
@@ -391,6 +417,7 @@ Comprobar que un formulario envíe información y la guarde correctamente en la 
                             """.trimIndent()
                         )
                     }
+
                     "funcionales" -> {
                         Text(
                             """
@@ -405,13 +432,13 @@ Verificar que un usuario pueda iniciar sesión y utilizar las opciones principal
                     }
                 }
             }
-
             // ⭐ SECCIÓN NUEVA: lee directamente de Room
             "actividades" -> {
                 Text(
                     "💾 Actividades guardadas en la base de datos",
                     style = MaterialTheme.typography.titleLarge
                 )
+
                 Spacer(modifier = Modifier.height(10.dp))
 
                 if (actividades.isEmpty()) {
@@ -419,24 +446,37 @@ Verificar que un usuario pueda iniciar sesión y utilizar las opciones principal
                 } else {
                     actividades.forEach { actividad ->
                         Text(
-                            "• ${actividad.nombre}",
+                            "• ${actividad.titulo} — ${actividad.progreso}% (${actividad.prioridad})",
                             style = MaterialTheme.typography.titleMedium
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                     }
                 }
-            }
-        }
+            }   // ← cierra la rama "actividades"
+
+        }   // ← cierra el when (seccion)
+
 
         seleccionado?.let { item ->
+
             Spacer(modifier = Modifier.height(25.dp))
+
             Text(
                 text = item.titulo,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
+
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = item.descripcion)
+
+            Text(
+                text = item.descripcion
+            )
+
         }
+
+
     }
+
+
 }

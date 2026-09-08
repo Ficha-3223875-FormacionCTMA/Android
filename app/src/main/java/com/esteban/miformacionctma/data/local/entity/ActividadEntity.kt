@@ -25,5 +25,5 @@ data class ActividadEntity(
     val fecha: String,
     val prioridad: String,
     val progreso: Int,
-    val categoriaId: Int
+    val categoriaId: Int? = null   // ← nullable: permite guardar sin categoría
 )

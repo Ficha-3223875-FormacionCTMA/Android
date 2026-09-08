@@ -6,11 +6,11 @@ data class FormularioActividadUiState(
     val fecha: String = "",
     val prioridad: String = "Media",
     val progreso: Int = 0,
-
+    val categoriaId: Int? = null,
     val errorTitulo: String? = null,
-    val errorFecha: String? = null,
-
-    val puedeGuardar: Boolean = false
-)
-
+    val errorFecha: String? = null
+) {
+    val puedeGuardar: Boolean
+        get() = titulo.isNotBlank() && fecha.isNotBlank()
+}
 
