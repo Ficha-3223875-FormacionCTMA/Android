@@ -5,10 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-<<<<<<< HEAD
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-=======
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -28,7 +24,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.esteban.miformacionctma.ui.screens.ActividadesScreen
 import com.esteban.miformacionctma.ui.screens.ActividadViewModel
->>>>>>> dbc20b7 (actualizacion de proyecto)
 import com.esteban.miformacionctma.ui.screens.HomeScreen
 import com.esteban.miformacionctma.ui.theme.MiFormacionCTMATheme
 
@@ -40,12 +35,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MiFormacionCTMATheme {
-<<<<<<< HEAD
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    HomeScreen()
-=======
                 var tabSeleccionado by rememberSaveable { mutableIntStateOf(0) }
 
                 val actividadViewModel: ActividadViewModel = viewModel(factory = ActividadViewModel.Factory)
@@ -76,7 +65,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
->>>>>>> dbc20b7 (actualizacion de proyecto)
                 }
             }
         }

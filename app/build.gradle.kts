@@ -1,21 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-<<<<<<< HEAD
-=======
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
->>>>>>> dbc20b7 (actualizacion de proyecto)
 }
 
 android {
     namespace = "com.esteban.miformacionctma"
-<<<<<<< HEAD
-    compileSdk {
-        version = release(36)
-    }
-=======
     compileSdk = 36
->>>>>>> dbc20b7 (actualizacion de proyecto)
 
     defaultConfig {
         applicationId = "com.esteban.miformacionctma"
@@ -37,41 +29,41 @@ android {
         }
     }
     compileOptions {
-<<<<<<< HEAD
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-=======
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
->>>>>>> dbc20b7 (actualizacion de proyecto)
     }
     buildFeatures {
         compose = true
+    }
+    kotlinOptions {
+        jvmTarget = "21"
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-<<<<<<< HEAD
-=======
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
->>>>>>> dbc20b7 (actualizacion de proyecto)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-<<<<<<< HEAD
-=======
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.core.ktx)
     ksp(libs.androidx.room.compiler)
->>>>>>> dbc20b7 (actualizacion de proyecto)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.gson)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
