@@ -2,7 +2,6 @@ package com.steven.miformacionctma.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -14,8 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.steven.miformacionctma.model.ActividadFormativa
 import com.steven.miformacionctma.model.EstadoActividad
@@ -27,27 +27,29 @@ fun PantallaActividades(
     actividades: List<ActividadFormativa>,
     onActividadClick: (ActividadFormativa) -> Unit,
     onRecargar: () -> Unit,
-    modifier: Modifier = Modifier
+    onAgregarActividad: (titulo: String, descripcion: String, fechaLimite: String) -> Unit = { _, _, _ -> }
 ) {
-    var filtroSeleccionado by remember { mutableStateOf<EstadoActividad?>(null) }
+    var estadoFiltroSeleccionado by remember { mutableStateOf<EstadoActividad?>(null) }
+    var mostrarDialogo by remember { mutableStateOf(false) }
 
-    val actividadesFiltradas = remember(actividades, filtroSeleccionado) {
-        if (filtroSeleccionado == null) actividades
-        else actividades.filter { it.estado == filtroSeleccionado }
+    val actividadesFiltradas = remember(actividades, estadoFiltroSeleccionado) {
+        if (estadoFiltroSeleccionado == null) actividades
+        else actividades.filter { it.estado == estadoFiltroSeleccionado }
     }
+
+    val configuration = LocalConfiguration.current
+    val esPantallaAncha = configuration.screenWidthDp >= 600
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Mi Formación CTMA",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Mi Formación CTMA") },
                 actions = {
                     IconButton(onClick = onRecargar) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Recargar actividades")
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Recargar actividades"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -58,113 +60,161 @@ fun PantallaActividades(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* Próxima implementación: Crear actividad */ },
-                containerColor = MaterialTheme.colorScheme.primary
+                onClick = { mostrarDialogo = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Nueva Actividad")
+                Icon(Icons.Default.Add, contentDescription = "Agregar Actividad")
             }
-        },
-        modifier = modifier
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Seccion de Filtros Rápidos
-            LazyRow(
+            // Barra de Filtros (Chips)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                item {
-                    FilterChip(
-                        selected = filtroSeleccionado == null,
-                        onClick = { filtroSeleccionado = null },
-                        label = { Text("Todas (${actividades.size})") }
-                    )
-                }
-                items(EstadoActividad.values().toList()) { estado ->
-                    val cantidad = actividades.count { it.estado == estado }
-                    FilterChip(
-                        selected = filtroSeleccionado == estado,
-                        onClick = {
-                            filtroSeleccionado = if (filtroSeleccionado == estado) null else estado
-                        },
-                        label = { Text("${estado.etiqueta} ($cantidad)") }
-                    )
-                }
+                FilterChip(
+                    selected = estadoFiltroSeleccionado == null,
+                    onClick = { estadoFiltroSeleccionado = null },
+                    label = { Text("Todas (${actividades.size})") }
+                )
+                FilterChip(
+                    selected = estadoFiltroSeleccionado == EstadoActividad.PENDIENTE,
+                    onClick = { estadoFiltroSeleccionado = EstadoActividad.PENDIENTE },
+                    label = { Text("Pendiente (${actividades.count { it.estado == EstadoActividad.PENDIENTE }})") }
+                )
+                FilterChip(
+                    selected = estadoFiltroSeleccionado == EstadoActividad.EN_PROCESO,
+                    onClick = { estadoFiltroSeleccionado = EstadoActividad.EN_PROCESO },
+                    label = { Text("En proceso (${actividades.count { it.estado == EstadoActividad.EN_PROCESO }})") }
+                )
             }
 
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                if (actividadesFiltradas.isEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "No hay actividades en esta categoría.",
-                            style = MaterialTheme.typography.bodyLarge
+            // Lista adaptable según el ancho de pantalla
+            if (actividadesFiltradas.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hay actividades en este estado.",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            } else if (esPantallaAncha) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 300.dp),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.semantics {
+                        contentDescription = "Grid de actividades formativas"
+                    }
+                ) {
+                    items(actividadesFiltradas, key = { it.id }) { actividad ->
+                        TarjetaActividad(
+                            actividad = actividad,
+                            onClick = { onActividadClick(actividad) }
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedButton(onClick = { filtroSeleccionado = null }) {
-                            Text("Limpiar filtros")
-                        }
                     }
-                } else if (maxWidth < 600.dp) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 80.dp, top = 4.dp)
-                    ) {
-                        items(
-                            items = actividadesFiltradas,
-                            key = { it.id }
-                        ) { actividad ->
-                            TarjetaActividad(
-                                actividad = actividad,
-                                onClick = { onActividadClick(actividad) }
-                            )
-                        }
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.semantics {
+                        contentDescription = "Lista de actividades formativas"
                     }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 80.dp, top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = actividadesFiltradas,
-                            key = { it.id }
-                        ) { actividad ->
-                            TarjetaActividad(
-                                actividad = actividad,
-                                onClick = { onActividadClick(actividad) }
-                            )
-                        }
+                ) {
+                    items(actividadesFiltradas, key = { it.id }) { actividad ->
+                        TarjetaActividad(
+                            actividad = actividad,
+                            onClick = { onActividadClick(actividad) }
+                        )
                     }
                 }
             }
         }
     }
+
+    // Modal para agregar una nueva actividad
+    if (mostrarDialogo) {
+        DialogoAgregarActividad(
+            onDismiss = { mostrarDialogo = false },
+            onGuardar = { titulo, descripcion, fechaLimite ->
+                onAgregarActividad(titulo, descripcion, fechaLimite)
+                mostrarDialogo = false
+            }
+        )
+    }
 }
 
-@Preview(name = "Vista Celular", showBackground = true)
 @Composable
-fun PantallaActividadesPreview() {
-    PantallaActividades(
-        actividades = listOf(
-            ActividadFormativa("1", "Guía 3: Compose", "Pantalla declarativa y adaptable.", "2026-09-15", EstadoActividad.EN_PROCESO, 65),
-            ActividadFormativa("2", "Guía 6: Room", "Persistencia de datos.", "2026-09-22", EstadoActividad.PENDIENTE, 0),
-            ActividadFormativa("3", "Guía 2: Kotlin Fundamental", "Sintaxis básica y POO.", "2026-09-01", EstadoActividad.COMPLETADA, 100)
-        ),
-        onActividadClick = {},
-        onRecargar = {}
+fun DialogoAgregarActividad(
+    onDismiss: () -> Unit,
+    onGuardar: (titulo: String, descripcion: String, fechaLimite: String) -> Unit
+) {
+    var titulo by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var fechaLimite by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Nueva Actividad Formativa") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título de la guía/actividad") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = fechaLimite,
+                    onValueChange = { fechaLimite = it },
+                    label = { Text("Fecha límite (AAAA-MM-DD)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (titulo.isNotBlank()) {
+                        onGuardar(titulo, descripcion, fechaLimite)
+                    }
+                },
+                enabled = titulo.isNotBlank()
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
     )
 }
