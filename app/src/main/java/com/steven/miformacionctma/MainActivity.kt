@@ -20,18 +20,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.steven.miformacionctma.domain.ActividadFormativa
+import com.steven.miformacionctma.domain.Prioridad
+import com.steven.miformacionctma.domain.actividadesUrgentes
+import com.steven.miformacionctma.domain.promedioProgreso
 import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val actividadesEjemplo = listOf(
+            ActividadFormativa(1, "Configurar Android Studio", null, 100, -3, Prioridad.BAJA),
+            ActividadFormativa(2, "Laboratorio Compose", null, 65, 2, Prioridad.ALTA),
+            ActividadFormativa(3, "Documentar alcance inicial", null, 30, 5, Prioridad.MEDIA)
+        )
+        val resumen = "Promedio de avance: %.0f%% · Urgentes: %d".format(
+            promedioProgreso(actividadesEjemplo),
+            actividadesUrgentes(actividadesEjemplo).size
+        )
+
         setContent {
             MiFormacionCTMATheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    PantallaInicio()
+                    PantallaInicio(resumen = resumen)
                 }
             }
         }
@@ -39,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PantallaInicio(nombre: String = "Aprendiz") {
+fun PantallaInicio(nombre: String = "Aprendiz", resumen: String = "") {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -76,6 +91,15 @@ fun PantallaInicio(nombre: String = "Aprendiz") {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        if (resumen.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = resumen,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
@@ -110,6 +134,6 @@ fun PantallaInicio(nombre: String = "Aprendiz") {
 @Composable
 fun PantallaInicioPreview() {
     MiFormacionCTMATheme {
-        PantallaInicio()
+        PantallaInicio(resumen = "Promedio de avance: 65% · Urgentes: 1")
     }
 }
