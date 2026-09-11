@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.esteban.miformacionctma.Actividad
 import kotlinx.coroutines.flow.Flow
@@ -21,9 +22,21 @@ interface ActividadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(actividad: Actividad): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(actividades: List<Actividad>)
+
     @Update
     suspend fun update(actividad: Actividad)
 
     @Delete
     suspend fun delete(actividad: Actividad)
+
+    @Query("DELETE FROM actividades")
+    suspend fun deleteAll()
+
+    @Transaction
+    suspend fun replaceRemoteSnapshot(actividades: List<Actividad>) {
+        deleteAll()
+        insertAll(actividades)
+    }
 }

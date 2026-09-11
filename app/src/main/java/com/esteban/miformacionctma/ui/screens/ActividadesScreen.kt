@@ -1,5 +1,10 @@
 package com.esteban.miformacionctma.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +29,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.esteban.miformacionctma.Actividad
+import com.esteban.miformacionctma.data.DatError
 
 @Composable
 fun ActividadesScreen(
@@ -56,6 +65,7 @@ fun ActividadesScreen(
 ) {
     val actividades by viewModel.actividades.collectAsStateWithLifecycle()
     val formulario by viewModel.formulario.collectAsStateWithLifecycle()
+    val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
 
     var mostrandoFormulario by remember { mutableStateOf(false) }
 
@@ -109,6 +119,22 @@ fun ActividadesScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
+                // Refresh indicator no invasivo
+                RefreshBar(refreshState)
+
+                // Error banner con boton reintentar
+                AnimatedVisibility(
+                    visible = refreshState is RefreshUiState.Error,
+                    enter = slideInVertically() + fadeIn(),
+                    exit = slideOutVertically() + fadeOut()
+                ) {
+                    ErrorBanner(
+                        error = (refreshState as? RefreshUiState.Error)?.error,
+                        onRetry = { viewModel.syncFromRemote() },
+                        onDismiss = { viewModel.clearRefreshError() }
+                    )
+                }
+
                 Text(
                     text = "Mis actividades",
                     style = MaterialTheme.typography.headlineMedium,
@@ -116,7 +142,7 @@ fun ActividadesScreen(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                 )
 
-                if (actividades.isEmpty()) {
+                if (actividades.isEmpty() && refreshState !is RefreshUiState.Loading) {
                     EmptyState(
                         modifier = Modifier.weight(1f)
                     )
@@ -143,6 +169,91 @@ fun ActividadesScreen(
             }
         }
     }
+}
+
+@Composable
+private fun RefreshBar(state: RefreshUiState) {
+    AnimatedVisibility(
+        visible = state is RefreshUiState.Loading,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ErrorBanner(
+    error: DatError?,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = errorMessage(error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(onClick = onDismiss) {
+                    Text("Cerrar")
+                }
+                Spacer(Modifier.width(8.dp))
+                OutlinedButton(onClick = onRetry) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Reintentar")
+                }
+            }
+        }
+    }
+}
+
+private fun errorMessage(error: DatError?): String = when (error) {
+    is DatError.NoNetwork -> "Sin conexion a internet"
+    is DatError.Timeout -> "Tiempo de espera agotado"
+    is DatError.Unauthorized -> "Sesion expirada"
+    is DatError.Server -> "Error del servidor"
+    is DatError.Empty -> "Sin datos"
+    is DatError.Unknown -> error.message ?: "Error desconocido"
+    null -> "Error desconocido"
 }
 
 @Composable
@@ -243,7 +354,7 @@ private fun ActividadCard(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "📅 ${actividad.fecha}",
+                            text = "${actividad.fecha}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -322,13 +433,13 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             }
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Aún no tienes actividades",
+                text = "Aun no tienes actividades",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Presiona el botón + para registrar tu primera actividad",
+                text = "Presiona el boton + para registrar tu primera actividad",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

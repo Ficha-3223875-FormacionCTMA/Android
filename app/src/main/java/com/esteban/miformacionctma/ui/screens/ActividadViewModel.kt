@@ -2,13 +2,18 @@ package com.esteban.miformacionctma.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.Factory
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.esteban.miformacionctma.Actividad
 import com.esteban.miformacionctma.data.ActividadDatabase
 import com.esteban.miformacionctma.data.ActividadRepository
+import com.esteban.miformacionctma.data.DatError
+import com.esteban.miformacionctma.data.remote.OkHttpConfig
+import com.esteban.miformacionctma.data.remote.RemoteDatasource
+import com.esteban.miformacionctma.data.remote.RetrofitConfig
+import com.esteban.miformacionctma.data.remote.TokenProvider
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -23,13 +28,36 @@ class ActividadViewModel(private val repository: ActividadRepository) : ViewMode
             initialValue = emptyList()
         )
 
-    private val _formulario = kotlinx.coroutines.flow.MutableStateFlow(FormularioActividadUiState())
+    private val _formulario = MutableStateFlow(FormularioActividadUiState())
     val formulario: StateFlow<FormularioActividadUiState> = _formulario
+
+    private val _refreshState = MutableStateFlow<RefreshUiState>(RefreshUiState.Idle)
+    val refreshState: StateFlow<RefreshUiState> = _refreshState
 
     val estaEditando: Boolean
         get() = _actividadEditando != null
 
     private var _actividadEditando: Actividad? = null
+
+    init {
+        syncFromRemote()
+    }
+
+    fun syncFromRemote() {
+        viewModelScope.launch {
+            _refreshState.value = RefreshUiState.Loading
+            repository.syncFromRemote()
+                .onSuccess { _refreshState.value = RefreshUiState.Success }
+                .onFailure {
+                    val error = it as? DatError ?: DatError.Unknown(it.message)
+                    _refreshState.value = RefreshUiState.Error(error)
+                }
+        }
+    }
+
+    fun clearRefreshError() {
+        _refreshState.value = RefreshUiState.Idle
+    }
 
     fun cargarActividad(actividad: Actividad) {
         _actividadEditando = actividad
@@ -72,7 +100,7 @@ class ActividadViewModel(private val repository: ActividadRepository) : ViewMode
     fun guardar() {
         val estado = _formulario.value
 
-        val errorTitulo = if (estado.titulo.isBlank()) "Escribe un título" else null
+        val errorTitulo = if (estado.titulo.isBlank()) "Escribe un titulo" else null
         val errorFecha = if (estado.fecha.isBlank()) "Escribe una fecha" else null
         _formulario.value = estado.copy(errorTitulo = errorTitulo, errorFecha = errorFecha)
         if (errorTitulo != null || errorFecha != null) return
@@ -87,12 +115,13 @@ class ActividadViewModel(private val repository: ActividadRepository) : ViewMode
         )
 
         viewModelScope.launch {
-            if (_actividadEditando != null) {
+            val result = if (_actividadEditando != null) {
                 repository.update(actividad)
             } else {
                 repository.insert(actividad)
             }
-            limpiarFormulario()
+            result.onSuccess { limpiarFormulario() }
+            result.onFailure { /* error local, no afecta refresh */ }
         }
     }
 
@@ -115,7 +144,14 @@ class ActividadViewModel(private val repository: ActividadRepository) : ViewMode
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!
                 val dao = ActividadDatabase.getInstance(application).actividadDao()
-                ActividadViewModel(ActividadRepository(dao))
+                val tokenProvider = object : TokenProvider {
+                    override suspend fun getToken(): String? = null
+                }
+                val client = OkHttpConfig.createClient(tokenProvider)
+                val api = RetrofitConfig.createApi(client)
+                val remote = RemoteDatasource(api)
+                val db = ActividadDatabase.getInstance(application)
+                ActividadViewModel(ActividadRepository(dao, remote, db))
             }
         }
     }

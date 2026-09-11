@@ -1,132 +1,237 @@
-# Android - Mi Formación CTMA
+# Mi Formación CTMA
 
-## Semana 3 - Pruebas de Software y Scrum
+Aplicación Android para el seguimiento de actividades de formación del programa CTMA. Permite registrar, editar, eliminar y sincronizar actividades con un backend.
 
-### Casos de Uso
+## Requisitos
 
-Este documento contiene los casos de uso desarrollados para la actividad de pruebas de software de la Semana 3.
+- Android Studio Ladybug o superior
+- JDK 21
+- Android SDK 36
+- Min SDK 24 (Android 7.0)
 
----
+## Configuracion
 
-## CU-01 - Confirmar entrega
+1. Clona el repositorio
+2. Abre el proyecto en Android Studio
+3. Sincroniza Gradle (Sync Project with Gradle Files)
+4. Configura tu base URL de la API en `data/remote/RetrofitConfig.kt`
 
-### Actor principal
+```kotlin
+// Emulador de Android -> tu PC
+const val BASE_URL = "http://10.0.2.2:8000/"
 
-Mensajero
+// Dispositivo fisico -> IP de tu PC
+// const val BASE_URL = "http://192.168.1.100:8000/"
+```
 
-### Objetivo
+## Base de datos
 
-Confirmar que una orden fue entregada correctamente y registrar la evidencia correspondiente.
+El proyecto usa **dos bases de datos**:
 
-### Precondiciones
+### 1. Local (Room) - dentro de la app
 
-- El mensajero está autenticado.
-- La orden está asignada al mensajero.
-- La orden está disponible para entrega.
+- Archivo: `app/src/main/java/com/esteban/miformacionctma/data/ActividadDatabase.kt`
+- Tabla: `actividades` (> `Actividad.kt`)
+- Se crea automaticamente la primera vez que se ejecuta la app
+- Nombre del archivo: `miformacion_ctma.db`
 
-### Flujo principal
+```kotlin
+@Entity(tableName = "actividades")
+data class Actividad(
+    val id: Int,          // autoincrement
+    val titulo: String,
+    val descripcion: String,
+    val fecha: String,    // "2026-09-10"
+    val prioridad: String,// "Baja" | "Media" | "Alta"
+    val progreso: Int     // 0..100
+)
+```
 
-1. El mensajero selecciona una orden asignada.
-2. El sistema muestra la información de la orden.
-3. El mensajero inicia la confirmación de entrega.
-4. El mensajero registra una fotografía de la entrega.
-5. El mensajero identifica al receptor.
-6. El sistema valida que la información requerida esté completa.
-7. El sistema cambia el estado de la orden a `ENTREGADA`.
-8. El sistema registra la fecha de entrega.
-9. El sistema registra la auditoría.
-10. El sistema muestra un mensaje de confirmación.
+### 2. Remota (PostgreSQL) - backend
 
-### Flujos alternos y excepciones
+- Script: `database/actividades_postgres.sql`
+- Backend: `backend/` (FastAPI + SQLAlchemy)
 
-#### A1 - Sin fotografía
+## Pasos para integrar la base de datos
 
-1. El mensajero intenta confirmar la entrega.
-2. No se proporciona una fotografía.
-3. El sistema detecta que falta la evidencia.
-4. El sistema rechaza la confirmación.
-5. La orden permanece en su estado anterior.
+### Paso 1 - Preparar PostgreSQL
 
-#### A2 - Receptor no identificado
+```bash
+# 1. Inicia PostgreSQL (Windows: Services -> postgresql-x64-18)
+# 2. Ejecuta el script para crear la BD y datos de prueba
+psql -U postgres -f database/actividades_postgres.sql
+```
 
-1. El mensajero intenta confirmar la entrega.
-2. No identifica al receptor.
-3. El sistema detecta la información faltante.
-4. El sistema rechaza la confirmación.
-5. La orden no cambia a `ENTREGADA`.
+Esto crea:
+- Base de datos: `miformacion_ctma`
+- Tabla: `actividades`
+- 5 registros de prueba
 
----
+### Paso 2 - Configurar el backend
 
-## CU-02 - Registrar observación de entrega fallida
+```bash
+cd backend
 
-### Actor principal
+# Crear entorno virtual
+python -m venv .venv
+.venv\Scripts\activate
 
-Mensajero
+# Instalar dependencias
+pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv pydantic
 
-### Objetivo
+# Configurar credenciales
+copy .env.example .env
+# Edita .env con tu password de PostgreSQL
 
-Registrar el motivo por el cual una entrega no pudo realizarse.
+# Iniciar el servidor
+uvicorn app.main:app --reload --port 8000
+```
 
-### Precondiciones
+Verifica que funcione en: `http://localhost:8000/docs`
 
-- El mensajero está autenticado.
-- Existe una orden en proceso de entrega.
-- La entrega no pudo realizarse.
+### Paso 3 - Conectar la app Android
 
-### Flujo principal
+```kotlin
+// RetrofitConfig.kt
+// Emulador -> 10.0.2.2 (ya configurado por defecto)
+```
 
-1. El mensajero selecciona la orden.
-2. Selecciona la opción `Registrar entrega fallida`.
-3. El sistema muestra el campo para ingresar la observación.
-4. El mensajero escribe el motivo de la entrega fallida.
-5. El sistema valida que la observación tenga mínimo 10 caracteres.
-6. El sistema guarda la observación.
-7. El sistema registra la incidencia.
-8. El sistema muestra un mensaje de confirmación.
+El AndroidManifest ya tiene:
+- `INTERNET` permission
+- `usesCleartextTraffic="true"` (para HTTP local)
 
-### Flujos alternos y excepciones
+### Paso 4 - Ejecutar
 
-#### A1 - Observación menor a 10 caracteres
+1. Inicia PostgreSQL
+2. Inicia el backend (`uvicorn`)
+3. Compila la app en Android Studio
+4. La app sincroniza automaticamente con la API al abrirse
 
-1. El mensajero escribe una observación de menos de 10 caracteres.
-2. El sistema valida la longitud.
-3. El sistema rechaza el registro.
-4. El sistema muestra un mensaje indicando que se requieren mínimo 10 caracteres.
-5. La observación no se guarda.
+## Endpoints de la API
 
-#### A2 - Observación vacía
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/actividades/` | Lista todas |
+| GET | `/actividades/{id}` | Obtiene una |
+| POST | `/actividades/` | Crea una (201) |
+| PUT | `/actividades/{id}` | Actualiza una |
+| DELETE | `/actividades/{id}` | Elimina una (204) |
 
-1. El mensajero intenta guardar la entrega fallida sin escribir una observación.
-2. El sistema detecta que el campo está vacío.
-3. El sistema rechaza el registro.
-4. El sistema solicita completar la observación.
+## Estructura del proyecto
 
----
+```
+app/src/main/java/com/esteban/miformacionctma/
+├── Actividad.kt                      # Room Entity de la base de datos
+├── MainActivity.kt                   # Activity principal
+├── data/
+│   ├── DatError.kt                   # Errores tipados con classify()
+│   ├── ActividadDao.kt               # Acceso a datos local (Room) + replaceRemoteSnapshot()
+│   ├── ActividadDatabase.kt          # Configuracion de la base de datos Room
+│   ├── ActividadRepository.kt        # Repositorio: combina local + remoto
+│   ├── dto/
+│   │   └── ActividadDTO.kt           # Modelo de transferencia de datos
+│   ├── mapper/
+│   │   └── ActividadMapper.kt        # Conversion Entity <-> DTO
+│   └── remote/
+│       ├── ActividadesApi.kt         # Interface Retrofit con @GET/@POST/@PUT/@DELETE
+│       ├── BearerTokenInterceptor.kt # Inyecta token Bearer en cada request
+│       ├── TokenProvider.kt          # Interface para proveer el token
+│       ├── OkHttpConfig.kt           # OkHttpClient con timeouts (30s) + logging
+│       ├── RetrofitConfig.kt         # Retrofit con baseUrl + GsonConverter
+│       └── RemoteDatasource.kt       # Encapsula response.isSuccessful en Result<T>
+└── ui/
+    ├── screens/
+    │   ├── ActividadesScreen.kt      # Lista de actividades con refresh + error banner
+    │   ├── FormularioActividad.kt    # Formulario de alta/edicion
+    │   ├── FormularioActividadUiState.kt # Estado del formulario
+    │   ├── RefreshUiState.kt         # Estado de sincronizacion (Idle/Loading/Error/Success)
+    │   ├── ActividadViewModel.kt     # ViewModel principal
+    │   └── HomeScreen.kt             # Pantalla principal de aprendizaje
+    └── theme/
+        ├── Color.kt                  # Paleta de colores
+        ├── Theme.kt                  # Tema Material3
+        └── Type.kt                   # Tipografia
+```
 
-## Evidencias
+## Arquitectura
 
-Las evidencias de los casos de uso estarán organizadas en:
+La app sigue una arquitectura en capas con observacion de Room en la UI:
 
-`evidencias/semana-3/casos-de-uso/`
+```
+┌─────────────┐   Flow<Room>   ┌───────────────────┐
+│  UI (Compose)│ ─────────────▶ │  ViewModel        │
+│             │ ◀───────────── │  RefreshUiState   │
+└─────────────┘                └───────┬───────────┘
+                                       │
+                              ┌────────▼───────────┐
+                              │  Repository        │
+                              │  syncFromRemote()  │
+                              │  withTransaction   │
+                              └──┬────────────┬────┘
+                                 │            │
+                        ┌────────▼───┐  ┌─────▼────────┐
+                        │ Remote       │  │ Local (Room) │
+                        │Datasource   │  │ DAO          │
+                        └────────┬───┘  └─────┬────────┘
+                                 │            │
+                     ┌───────────▼───┐  ┌─────▼────────────┐
+                     │ Retrofit API  │  │ Actividad Database│
+                     └───────────────┘  └──────────────────┘
+```
 
-### CU-01 - Confirmar entrega
+### Flujo de sincronizacion
 
-- Flujo principal.
-- Caso alterno sin fotografía.
-- Caso alterno sin receptor identificado.
+1. La pantalla observa **Room** directamente con `StateFlow<List<Actividad>>`
+2. `syncFromRemote()` consulta la API remota via `RemoteDatasource`
+3. Los datos remotos se clasifican con `Throwable.classify() -> DatError`
+4. La escritura en la BD es transaccional: `db.withTransaction { dao.replaceRemoteSnapshot() }`
+5. El estado de refresh es independiente del contenido (`RefreshUiState`)
 
-### CU-02 - Registrar observación de entrega fallida
+### Manejo de errores
 
-- Flujo principal.
-- Caso alterno con observación menor a 10 caracteres.
-- Caso alterno con observación vacía.
+```kotlin
+sealed interface DatError {
+    NoNetwork      // Sin conexion
+    Timeout        // Timeout de red
+    Unauthorized   // Token invalido/expirado
+    Server         // Error 5xx
+    Empty          // Respuesta vacia
+    Unknown(message) // Error no clasificado
+}
+```
 
----
+## Dependencias
+
+| Libreria | Version | Uso |
+|----------|---------|-----|
+| Jetpack Compose BOM | 2024.09.00 | UI |
+| Room | 2.8.4 | Base de datos local |
+| Retrofit | 2.11.0 | Cliente HTTP |
+| OkHttp | 4.12.0 | Capa de red con interceptors |
+| Gson | 2.11.0 | Serializacion JSON |
+| Lifecycle | 2.6.1 | ViewModel + StateFlow |
+
+## Documentacion
+
+Los documentos del proyecto se encuentran en la carpeta `documentos/`:
+
+- `Historias de Usuario.docx`
+- `Matriz de Trazabilidad.docx`
+
+Las evidencias de las actividades se encuentran en `evidencias/`.
+
+## Directorios del repositorio
+
+| Carpeta | Contenido |
+|---------|-----------|
+| `app/` | Codigo fuente Android (Compose + Room) |
+| `backend/` | API FastAPI (Python) |
+| `database/` | Scripts SQL para PostgreSQL |
+| `documentos/` | Documentos del proyecto (.docx) |
+| `evidencias/` | Evidencias de las actividades |
 
 ## Autor
 
 **Esteban Bedoya Rojo**
 
-**Responsabilidad:** Casos de Uso y evidencias
-
-**Actividad:** Semana 3 - Pruebas de Software y Scrum
+Aplicacion de formacion del programa CTMA - SENA
