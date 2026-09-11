@@ -2,4 +2,8 @@
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
+<<<<<<< HEAD
+=======
+    alias(libs.plugins.ksp) apply false
+>>>>>>> dbc20b7 (actualizacion de proyecto)
 }
