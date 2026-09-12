@@ -1,94 +1,73 @@
 package com.steven.miformacionctma.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.steven.miformacionctma.domain.ActividadFormativa
-import com.steven.miformacionctma.domain.Prioridad
-import com.steven.miformacionctma.domain.estadoActividad
-import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.steven.miformacionctma.data.InMemoryActividadRepository
+import com.steven.miformacionctma.ui.ActividadesViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+private const val RUTA_LISTA = "lista"
+private const val RUTA_CREAR = "crear"
+private const val RUTA_DETALLE = "detalle/{actividadId}"
+
 @Composable
-fun PantallaDetalleActividad(
-    actividad: ActividadFormativa?,
-    onVolverClick: () -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Detalle") })
-        }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            if (actividad == null) {
-                Text(
-                    text = "No se encontró la actividad.",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            } else {
-                Text(text = actividad.titulo, style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(8.dp))
+fun AppNavigation() {
+    val navController = rememberNavController()
 
-                val estado = estadoActividad(actividad.progreso, actividad.diasRestantes)
-                Text(
-                    text = "$estado · ${actividad.prioridad.name}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+    // El repositorio se crea una sola vez y vive mientras viva este composable.
+    // En Semana 6 esto cambiará por RoomActividadRepository sin tocar el ViewModel.
+    val repository = remember { InMemoryActividadRepository() }
+    val viewModel = remember { ActividadesViewModel(repository) }
 
-                actividad.descripcion?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
+    // collectAsStateWithLifecycle: recolecta el StateFlow respetando el ciclo
+    // de vida de la pantalla (se pausa cuando la app va a background),
+    // tal como preguntaba la pregunta 8 de tu examen.
+    val actividades by viewModel.uiState.collectAsStateWithLifecycle()
+
+    NavHost(navController = navController, startDestination = RUTA_LISTA) {
+        composable(RUTA_LISTA) {
+            PantallaActividades(
+                actividades = actividades,
+                onActividadClick = { actividad ->
+                    navController.navigate("detalle/${actividad.id}")
+                },
+                onAgregarClick = {
+                    navController.navigate(RUTA_CREAR)
                 }
-
-                LinearProgressIndicator(
-                    progress = { actividad.progreso / 100f },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${actividad.progreso}% completado",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            )
         }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
-@Composable
-fun PantallaDetalleActividadPreview() {
-    MiFormacionCTMATheme {
-        PantallaDetalleActividad(
-            actividad = ActividadFormativa(
-                1, "Laboratorio Compose", "Construir la pantalla de detalle", 65, 2, Prioridad.ALTA
-            ),
-            onVolverClick = {}
-        )
-    }
-}
+        composable(RUTA_CREAR) {
+            FormularioActividadContenedor(
+                onGuardar = { nuevaActividad ->
+                    viewModel.agregar(nuevaActividad)
+                    navController.popBackStack()
+                },
+                onCancelar = {
+                    navController.popBackStack()
+                },
+                siguienteId = { viewModel.siguienteId() }
+            )
+        }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "No encontrada")
-@Composable
-fun PantallaDetalleActividadNoEncontradaPreview() {
-    MiFormacionCTMATheme {
-        PantallaDetalleActividad(actividad = null, onVolverClick = {})
+        composable(
+            route = RUTA_DETALLE,
+            arguments = listOf(navArgument("actividadId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val actividadId = backStackEntry.arguments?.getLong("actividadId")
+            val actividad = actividadId?.let { viewModel.buscarPorId(it) }
+
+            PantallaDetalleActividad(
+                actividad = actividad,
+                onVolverClick = { navController.popBackStack() }
+            )
+        }
     }
 }
