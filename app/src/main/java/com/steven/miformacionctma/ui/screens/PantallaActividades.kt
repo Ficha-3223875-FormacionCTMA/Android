@@ -1,7 +1,6 @@
 package com.steven.miformacionctma.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,9 +12,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as itemsGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,13 +36,23 @@ import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
 @Composable
 fun PantallaActividades(
     actividades: List<ActividadFormativa>,
+    modoGridManual: Boolean = false,
+    onCambiarModoGrid: (Boolean) -> Unit = {},
     onActividadClick: (ActividadFormativa) -> Unit = {},
     onAgregarClick: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis actividades") }
+                title = { Text("Mis actividades") },
+                actions = {
+                    IconButton(onClick = { onCambiarModoGrid(!modoGridManual) }) {
+                        Icon(
+                            imageVector = if (modoGridManual) Icons.Filled.ViewList else Icons.Filled.GridView,
+                            contentDescription = if (modoGridManual) "Cambiar a lista" else "Cambiar a grid"
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -54,6 +66,7 @@ fun PantallaActividades(
         } else {
             ContenidoAdaptable(
                 actividades = actividades,
+                forzarGrid = modoGridManual,
                 onActividadClick = onActividadClick,
                 contentPadding = paddingInterno
             )
@@ -64,26 +77,25 @@ fun PantallaActividades(
 @Composable
 private fun ContenidoAdaptable(
     actividades: List<ActividadFormativa>,
+    forzarGrid: Boolean,
     onActividadClick: (ActividadFormativa) -> Unit,
     contentPadding: PaddingValues
 ) {
-    BoxWithConstraints {
-        // Umbral de 600.dp: decisión de este ejercicio, no una regla universal.
-        // Por debajo, una columna angosta (teléfono) se ve mejor en lista simple;
-        // por encima (tablet, pantalla grande), aprovechamos el ancho con un grid.
-        if (maxWidth < 600.dp) {
-            ListaActividades(
-                actividades = actividades,
-                onActividadClick = onActividadClick,
-                contentPadding = contentPadding
-            )
-        } else {
-            CuadriculaActividades(
-                actividades = actividades,
-                onActividadClick = onActividadClick,
-                contentPadding = contentPadding
-            )
-        }
+    // La preferencia guardada en DataStore decide el modo directamente,
+    // sin combinarla con el ancho de pantalla, para que el cambio
+    // manual sea siempre visible en cualquier dispositivo.
+    if (forzarGrid) {
+        CuadriculaActividades(
+            actividades = actividades,
+            onActividadClick = onActividadClick,
+            contentPadding = contentPadding
+        )
+    } else {
+        ListaActividades(
+            actividades = actividades,
+            onActividadClick = onActividadClick,
+            contentPadding = contentPadding
+        )
     }
 }
 

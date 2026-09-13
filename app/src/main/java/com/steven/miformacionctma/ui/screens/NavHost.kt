@@ -3,15 +3,21 @@ package com.steven.miformacionctma.ui.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.steven.miformacionctma.data.InMemoryActividadRepository
+import androidx.room.Room
+import com.steven.miformacionctma.data.AppDatabase
+import com.steven.miformacionctma.data.MIGRACION_1_A_2
+import com.steven.miformacionctma.data.PreferenciasRepository
+import com.steven.miformacionctma.data.RoomActividadRepository
 import com.steven.miformacionctma.ui.ActividadesViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 private const val RUTA_LISTA = "lista"
 private const val RUTA_CREAR = "crear"
@@ -20,21 +26,32 @@ private const val RUTA_DETALLE = "detalle/{actividadId}"
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    // El repositorio se crea una sola vez y vive mientras viva este composable.
-    // En Semana 6 esto cambiará por RoomActividadRepository sin tocar el ViewModel.
-    val repository = remember { InMemoryActividadRepository() }
-    val viewModel = remember { ActividadesViewModel(repository) }
+    val viewModel = remember {
+        val database = Room.databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "miformacionctma.db"
+        )
+            .addMigrations(MIGRACION_1_A_2)
+            .build()
 
-    // collectAsStateWithLifecycle: recolecta el StateFlow respetando el ciclo
-    // de vida de la pantalla (se pausa cuando la app va a background),
-    // tal como preguntaba la pregunta 8 de tu examen.
+        val scope = CoroutineScope(SupervisorJob())
+        val actividadRepository = RoomActividadRepository(database.actividadDao(), scope)
+        val preferenciasRepository = PreferenciasRepository(context.applicationContext)
+        ActividadesViewModel(actividadRepository, preferenciasRepository)
+    }
+
     val actividades by viewModel.uiState.collectAsStateWithLifecycle()
+    val modoGrid by viewModel.modoGridPreferido.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = RUTA_LISTA) {
         composable(RUTA_LISTA) {
             PantallaActividades(
                 actividades = actividades,
+                modoGridManual = modoGrid,
+                onCambiarModoGrid = { activo -> viewModel.alternarModoGrid(activo) },
                 onActividadClick = { actividad ->
                     navController.navigate("detalle/${actividad.id}")
                 },
