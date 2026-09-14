@@ -34,6 +34,7 @@ import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
 @Composable
 fun FormularioActividad(
     uiState: FormularioActividadUiState,
+    mensajeError: String? = null,
     onTituloChange: (String) -> Unit,
     onDescripcionChange: (String) -> Unit,
     onFechaChange: (String) -> Unit,
@@ -103,6 +104,14 @@ fun FormularioActividad(
                 prioridadSeleccionada = uiState.prioridad,
                 onPrioridadChange = onPrioridadChange
             )
+
+            if (mensajeError != null) {
+                Text(
+                    text = mensajeError,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             Button(
                 onClick = onGuardarClick,

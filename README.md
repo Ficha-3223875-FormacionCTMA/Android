@@ -34,3 +34,12 @@ com.steven.miformacionctma/
 ## Estado del proyecto
 
 Semanas 1 a 6 completadas: pantalla base, núcleo de dominio en Kotlin, UI con Compose (lista/detalle/formulario adaptable), navegación, estado con ViewModel y persistencia con Room + DataStore.
+
+
+## Semana 7: Corrutinas y Flow
+
+- `ListadoUiState` (Cargando/Contenido/Vacío/Error) y `OperacionUiState` (Inactiva/EnCurso/Exitosa/Fallida) como estados sellados, exhaustivos en cada `when`.
+- `flatMapLatest` sobre el texto de búsqueda para cancelar automáticamente consultas obsoletas.
+- `combine` entre el flujo de actividades y la preferencia de orden guardada en DataStore.
+- Todas las excepciones no relacionadas con cancelación se capturan y transforman en `ListadoUiState.Error` o `OperacionUiState.Fallida`; las `CancellationException` siempre se relanzan.
+- Pruebas del `ViewModel` con `StandardTestDispatcher`, `runTest`, `backgroundScope` y tiempo virtual (sin `Thread.sleep`).

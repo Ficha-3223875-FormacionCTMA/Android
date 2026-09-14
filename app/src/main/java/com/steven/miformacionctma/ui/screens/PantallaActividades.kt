@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as itemsLista
@@ -14,20 +15,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.steven.miformacionctma.domain.ActividadFormativa
+import com.steven.miformacionctma.domain.ListadoUiState
 import com.steven.miformacionctma.domain.Prioridad
 import com.steven.miformacionctma.ui.components.TarjetaActividad
 import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
@@ -35,12 +44,15 @@ import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaActividades(
-    actividades: List<ActividadFormativa>,
+    uiState: ListadoUiState,
     modoGridManual: Boolean = false,
     onCambiarModoGrid: (Boolean) -> Unit = {},
+    onBuscar: (String) -> Unit = {},
     onActividadClick: (ActividadFormativa) -> Unit = {},
     onAgregarClick: () -> Unit = {}
 ) {
+    var textoBusqueda by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -61,15 +73,36 @@ fun PantallaActividades(
             }
         }
     ) { paddingInterno ->
-        if (actividades.isEmpty()) {
-            EstadoVacio(modifier = Modifier.padding(paddingInterno))
-        } else {
-            ContenidoAdaptable(
-                actividades = actividades,
-                forzarGrid = modoGridManual,
-                onActividadClick = onActividadClick,
-                contentPadding = paddingInterno
+        Column(modifier = Modifier.fillMaxSize().padding(paddingInterno)) {
+            OutlinedTextField(
+                value = textoBusqueda,
+                onValueChange = {
+                    textoBusqueda = it
+                    onBuscar(it)
+                },
+                label = { Text("Buscar actividad") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
+
+            when (uiState) {
+                is ListadoUiState.Cargando -> EstadoCargando()
+                is ListadoUiState.Vacio -> EstadoVacio()
+                is ListadoUiState.Error -> EstadoError(
+                    mensaje = uiState.mensaje,
+                    onReintentar = {
+                        textoBusqueda = ""
+                        onBuscar("")
+                    }
+                )
+                is ListadoUiState.Contenido -> ContenidoAdaptable(
+                    actividades = uiState.actividades,
+                    forzarGrid = modoGridManual,
+                    onActividadClick = onActividadClick,
+                    contentPadding = PaddingValues(0.dp)
+                )
+            }
         }
     }
 }
@@ -81,21 +114,10 @@ private fun ContenidoAdaptable(
     onActividadClick: (ActividadFormativa) -> Unit,
     contentPadding: PaddingValues
 ) {
-    // La preferencia guardada en DataStore decide el modo directamente,
-    // sin combinarla con el ancho de pantalla, para que el cambio
-    // manual sea siempre visible en cualquier dispositivo.
     if (forzarGrid) {
-        CuadriculaActividades(
-            actividades = actividades,
-            onActividadClick = onActividadClick,
-            contentPadding = contentPadding
-        )
+        CuadriculaActividades(actividades, onActividadClick, contentPadding)
     } else {
-        ListaActividades(
-            actividades = actividades,
-            onActividadClick = onActividadClick,
-            contentPadding = contentPadding
-        )
+        ListaActividades(actividades, onActividadClick, contentPadding)
     }
 }
 
@@ -107,12 +129,7 @@ private fun ListaActividades(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = 16.dp
-        )
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
     ) {
         itemsLista(items = actividades, key = { it.id }) { actividad ->
             TarjetaActividad(actividad = actividad, onClick = onActividadClick)
@@ -129,12 +146,7 @@ private fun CuadriculaActividades(
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = contentPadding.calculateTopPadding() + 8.dp,
-            bottom = 16.dp
-        ),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         itemsGrid(items = actividades, key = { it.id }) { actividad ->
@@ -144,18 +156,29 @@ private fun CuadriculaActividades(
 }
 
 @Composable
-private fun EstadoVacio(modifier: Modifier = Modifier) {
+private fun EstadoCargando() {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        CircularProgressIndicator()
         Text(
-            text = "Aún no tienes actividades",
-            style = MaterialTheme.typography.titleMedium
+            text = "Cargando actividades…",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 12.dp)
         )
+    }
+}
+
+@Composable
+private fun EstadoVacio() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Aún no tienes actividades", style = MaterialTheme.typography.titleMedium)
         Text(
             text = "Cuando tu instructor asigne una actividad, aparecerá aquí.",
             style = MaterialTheme.typography.bodyMedium,
@@ -164,32 +187,60 @@ private fun EstadoVacio(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EstadoError(mensaje: String, onReintentar: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Ocurrió un problema", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = mensaje,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+        Button(onClick = onReintentar, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Reintentar")
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PantallaActividadesPreview() {
     MiFormacionCTMATheme {
         PantallaActividades(
-            actividades = listOf(
-                ActividadFormativa(1, "Configurar Android Studio", null, 100, -3, Prioridad.BAJA),
-                ActividadFormativa(2, "Laboratorio Compose", null, 65, 2, Prioridad.ALTA),
-                ActividadFormativa(3, "Documentar alcance inicial", null, 30, 5, Prioridad.MEDIA),
-                ActividadFormativa(4, "Núcleo Kotlin de dominio", null, 100, -1, Prioridad.MEDIA),
-                ActividadFormativa(
-                    5,
-                    "Documentar el alcance inicial del proyecto integrador completo de la ficha",
-                    null, 45, 1, Prioridad.ALTA
+            uiState = ListadoUiState.Contenido(
+                listOf(
+                    ActividadFormativa(1, "Configurar Android Studio", null, 100, -3, Prioridad.BAJA),
+                    ActividadFormativa(2, "Laboratorio Compose", null, 65, 2, Prioridad.ALTA)
                 )
             )
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "Estado vacío")
+@Preview(showBackground = true, name = "Vacío")
 @Composable
 fun PantallaActividadesVaciaPreview() {
     MiFormacionCTMATheme {
-        PantallaActividades(actividades = emptyList())
+        PantallaActividades(uiState = ListadoUiState.Vacio)
+    }
+}
+
+@Preview(showBackground = true, name = "Cargando")
+@Composable
+fun PantallaActividadesCargandoPreview() {
+    MiFormacionCTMATheme {
+        PantallaActividades(uiState = ListadoUiState.Cargando)
+    }
+}
+
+@Preview(showBackground = true, name = "Error")
+@Composable
+fun PantallaActividadesErrorPreview() {
+    MiFormacionCTMATheme {
+        PantallaActividades(uiState = ListadoUiState.Error("No se pudo conectar con la base de datos"))
     }
 }

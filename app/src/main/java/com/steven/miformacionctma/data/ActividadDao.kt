@@ -1,6 +1,7 @@
 package com.steven.miformacionctma.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
@@ -17,6 +18,9 @@ interface ActividadDao {
 
     @Insert
     suspend fun insertar(actividad: ActividadEntity): Long
+
+    @Query("DELETE FROM actividades WHERE id = :id")
+    suspend fun eliminar(id: Long)
 
     @Query("SELECT * FROM actividades WHERE titulo LIKE '%' || :texto || '%' ORDER BY id ASC")
     fun buscarPorTitulo(texto: String): Flow<List<ActividadEntity>>

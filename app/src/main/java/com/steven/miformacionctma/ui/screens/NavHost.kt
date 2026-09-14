@@ -1,6 +1,7 @@
 package com.steven.miformacionctma.ui.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -15,9 +16,8 @@ import com.steven.miformacionctma.data.AppDatabase
 import com.steven.miformacionctma.data.MIGRACION_1_A_2
 import com.steven.miformacionctma.data.PreferenciasRepository
 import com.steven.miformacionctma.data.RoomActividadRepository
+import com.steven.miformacionctma.domain.OperacionUiState
 import com.steven.miformacionctma.ui.ActividadesViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 private const val RUTA_LISTA = "lista"
 private const val RUTA_CREAR = "crear"
@@ -37,21 +37,22 @@ fun AppNavigation() {
             .addMigrations(MIGRACION_1_A_2)
             .build()
 
-        val scope = CoroutineScope(SupervisorJob())
-        val actividadRepository = RoomActividadRepository(database.actividadDao(), scope)
+        val actividadRepository = RoomActividadRepository(database.actividadDao())
         val preferenciasRepository = PreferenciasRepository(context.applicationContext)
         ActividadesViewModel(actividadRepository, preferenciasRepository)
     }
 
-    val actividades by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val operacion by viewModel.operacion.collectAsStateWithLifecycle()
     val modoGrid by viewModel.modoGridPreferido.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = RUTA_LISTA) {
         composable(RUTA_LISTA) {
             PantallaActividades(
-                actividades = actividades,
+                uiState = uiState,
                 modoGridManual = modoGrid,
                 onCambiarModoGrid = { activo -> viewModel.alternarModoGrid(activo) },
+                onBuscar = { texto -> viewModel.buscar(texto) },
                 onActividadClick = { actividad ->
                     navController.navigate("detalle/${actividad.id}")
                 },
@@ -62,12 +63,20 @@ fun AppNavigation() {
         }
 
         composable(RUTA_CREAR) {
-            FormularioActividadContenedor(
-                onGuardar = { nuevaActividad ->
-                    viewModel.agregar(nuevaActividad)
+            // Cuando la operación de guardado termina bien, vuelve automáticamente
+            // a la lista y limpia el estado para la próxima vez que se abra el formulario.
+            LaunchedEffect(operacion) {
+                if (operacion is OperacionUiState.Exitosa) {
+                    viewModel.reiniciarOperacion()
                     navController.popBackStack()
-                },
+                }
+            }
+
+            FormularioActividadContenedor(
+                operacion = operacion,
+                onGuardar = { nuevaActividad -> viewModel.agregar(nuevaActividad) },
                 onCancelar = {
+                    viewModel.reiniciarOperacion()
                     navController.popBackStack()
                 },
                 siguienteId = { viewModel.siguienteId() }
