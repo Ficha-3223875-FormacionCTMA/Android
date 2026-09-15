@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.items as itemsGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.steven.miformacionctma.domain.ActividadFormativa
 import com.steven.miformacionctma.domain.ListadoUiState
+import com.steven.miformacionctma.domain.OperacionUiState
 import com.steven.miformacionctma.domain.Prioridad
 import com.steven.miformacionctma.ui.components.TarjetaActividad
 import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
@@ -45,19 +48,25 @@ import com.steven.miformacionctma.ui.theme.MiFormacionCTMATheme
 @Composable
 fun PantallaActividades(
     uiState: ListadoUiState,
+    operacion: OperacionUiState = OperacionUiState.Inactiva,
     modoGridManual: Boolean = false,
     onCambiarModoGrid: (Boolean) -> Unit = {},
     onBuscar: (String) -> Unit = {},
     onActividadClick: (ActividadFormativa) -> Unit = {},
-    onAgregarClick: () -> Unit = {}
+    onAgregarClick: () -> Unit = {},
+    onRefrescarClick: () -> Unit = {}
 ) {
     var textoBusqueda by remember { mutableStateOf("") }
+    val refrescando = operacion is OperacionUiState.EnCurso
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mis actividades") },
                 actions = {
+                    IconButton(onClick = onRefrescarClick) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Refrescar desde el servidor")
+                    }
                     IconButton(onClick = { onCambiarModoGrid(!modoGridManual) }) {
                         Icon(
                             imageVector = if (modoGridManual) Icons.Filled.ViewList else Icons.Filled.GridView,
@@ -74,6 +83,19 @@ fun PantallaActividades(
         }
     ) { paddingInterno ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingInterno)) {
+            if (refrescando) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+            if (operacion is OperacionUiState.Fallida) {
+                Text(
+                    text = operacion.mensaje,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
             OutlinedTextField(
                 value = textoBusqueda,
                 onValueChange = {

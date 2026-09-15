@@ -1,10 +1,10 @@
 package com.steven.miformacionctma.data
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,4 +34,16 @@ interface ActividadDao {
 
     @Query("SELECT * FROM categorias ORDER BY nombre ASC")
     fun obtenerCategorias(): Flow<List<CategoriaEntity>>
+
+    @Transaction
+    suspend fun reemplazarTodas(actividades: List<ActividadEntity>) {
+        borrarTodas()
+        actividades.forEach { insertarOActualizar(it) }
+    }
+
+    @Query("DELETE FROM actividades")
+    suspend fun borrarTodas()
+
+    @Upsert
+    suspend fun insertarOActualizar(actividad: ActividadEntity)
 }

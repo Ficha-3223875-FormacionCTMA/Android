@@ -7,6 +7,7 @@ import com.steven.miformacionctma.domain.ActividadRepository
 import com.steven.miformacionctma.domain.ListadoUiState
 import com.steven.miformacionctma.domain.OperacionUiState
 import com.steven.miformacionctma.domain.PreferenciasRepositoryContrato
+import com.steven.miformacionctma.domain.ResultadoRefresh
 import com.steven.miformacionctma.domain.ordenarActividades
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +94,24 @@ class ActividadesViewModel(
                 _operacion.value = OperacionUiState.Fallida(
                     excepcion.message ?: "No se pudo eliminar la actividad"
                 )
+            }
+        }
+    }
+
+    fun refrescar() {
+        // Protección contra doble toque: si ya hay un refresh en curso, ignora el nuevo intento.
+        // Esto es justo CA-07: dos refresh rápidos no corrompen nada.
+        if (_operacion.value == OperacionUiState.EnCurso) return
+
+        viewModelScope.launch {
+            _operacion.value = OperacionUiState.EnCurso
+            try {
+                when (val resultado = repository.refrescar()) {
+                    is ResultadoRefresh.Exitoso -> _operacion.value = OperacionUiState.Exitosa
+                    is ResultadoRefresh.Fallido -> _operacion.value = OperacionUiState.Fallida(resultado.mensaje)
+                }
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
             }
         }
     }

@@ -2,6 +2,7 @@ package com.steven.miformacionctma.ui
 
 import com.steven.miformacionctma.domain.ActividadFormativa
 import com.steven.miformacionctma.domain.ActividadRepository
+import com.steven.miformacionctma.domain.ResultadoRefresh
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,4 +34,12 @@ class FakeActividadRepository : ActividadRepository {
 
     override fun buscarPorId(id: Long): ActividadFormativa? =
         actividades.value.find { it.id == id }
+
+    override suspend fun refrescar(): ResultadoRefresh {
+        return if (debeFallar) {
+            ResultadoRefresh.Fallido("Fallo simulado de refresh")
+        } else {
+            ResultadoRefresh.Exitoso
+        }
+    }
 }

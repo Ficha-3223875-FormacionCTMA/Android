@@ -43,3 +43,14 @@ Semanas 1 a 6 completadas: pantalla base, núcleo de dominio en Kotlin, UI con C
 - `combine` entre el flujo de actividades y la preferencia de orden guardada en DataStore.
 - Todas las excepciones no relacionadas con cancelación se capturan y transforman en `ListadoUiState.Error` o `OperacionUiState.Fallida`; las `CancellationException` siempre se relanzan.
 - Pruebas del `ViewModel` con `StandardTestDispatcher`, `runTest`, `backgroundScope` y tiempo virtual (sin `Thread.sleep`).
+
+
+## Semana 8: Servicios web y sincronización
+
+- Retrofit + kotlinx.serialization para consumir un servicio REST simulado (MockWebServer embebido en modo debug, sin backend real).
+- `ActividadDto` como capa de aislamiento entre el contrato de red y el dominio — un cambio en el JSON del servidor nunca se propaga directo a la UI.
+- `RemoteActividadDataSource` clasifica errores (sin conexión, timeout, 401, 404, 500, JSON inválido) usando un `ResultadoRed` sellado.
+- `RoomActividadRepository.refrescar()`: una respuesta remota exitosa reemplaza el contenido de Room; un error de red **nunca** borra el caché existente.
+- `TokenProvider` simulado, sin secretos reales ni tokens en el código o el historial de Git.
+- `network_security_config.xml` habilita tráfico HTTP sin cifrar únicamente hacia `localhost`, nunca hacia dominios externos.
+- Pruebas: clasificación de errores con MockWebServer controlado (7 casos), e integración Room + red confirmando que un fallo remoto conserva el caché (2 casos).

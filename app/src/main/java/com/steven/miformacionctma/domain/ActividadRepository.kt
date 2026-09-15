@@ -7,4 +7,10 @@ interface ActividadRepository {
     suspend fun agregar(actividad: ActividadFormativa)
     suspend fun eliminar(id: Long)
     fun buscarPorId(id: Long): ActividadFormativa?
+    suspend fun refrescar(): ResultadoRefresh
+}
+
+sealed interface ResultadoRefresh {
+    data object Exitoso : ResultadoRefresh
+    data class Fallido(val mensaje: String, val sesionVencida: Boolean = false) : ResultadoRefresh
 }
