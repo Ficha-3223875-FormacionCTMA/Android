@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Task
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.esteban.miformacionctma.ui.screens.ActividadesScreen
 import com.esteban.miformacionctma.ui.screens.ActividadViewModel
+import com.esteban.miformacionctma.ui.screens.CamaraScreen
 import com.esteban.miformacionctma.ui.screens.HomeScreen
 import com.esteban.miformacionctma.ui.theme.MiFormacionCTMATheme
 
@@ -55,6 +57,12 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Filled.Task, contentDescription = null) },
                                 label = { Text("Actividades") }
                             )
+                            NavigationBarItem(
+                                selected = tabSeleccionado == 2,
+                                onClick = { tabSeleccionado = 2 },
+                                icon = { Icon(Icons.Filled.CameraAlt, contentDescription = null) },
+                                label = { Text("Camara") }
+                            )
                         }
                     }
                 ) { innerPadding ->
@@ -64,6 +72,7 @@ class MainActivity : ComponentActivity() {
                             viewModel = actividadViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
+                        2 -> CamaraScreen(modifier = Modifier.padding(innerPadding))
                     }
                 }
             }
