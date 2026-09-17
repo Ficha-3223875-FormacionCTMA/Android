@@ -126,7 +126,11 @@ Las evidencias de los casos de uso estarán organizadas en:
 ## Autor
 
 **Esteban Bedoya Rojo**
+-
+**Frank Junior Benitez Mosquera**
+-
+**Hector Steven Cuesta**
+-
+Aplicacion de formacion del programa CTMA - SENA
 
-**Responsabilidad:** Casos de Uso y evidencias
-
-**Actividad:** Semana 3 - Pruebas de Software y Scrum
+Aclarar que cada uno tiene trabajo diferente en cada rama
