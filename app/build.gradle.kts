@@ -30,6 +30,36 @@ android {
         }
     }
 
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://dev.api.miformacion.example/\""
+            )
+        }
+        create("stage") {
+            dimension = "environment"
+            applicationIdSuffix = ".stage"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://stage.api.miformacion.example/\""
+            )
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://api.miformacion.example/\""
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -37,6 +67,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

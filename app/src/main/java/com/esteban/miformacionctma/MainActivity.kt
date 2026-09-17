@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         // 🔌 AQUÍ se hace la conexión con la base de datos
         val app = application as MiFormacionApplication
         val repository = app.container.actividadRepository
+        val evidenciaRepository = app.container.evidenciaRepository
 
         setContent {
             MiFormacionCTMATheme {
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     HomeScreen(
                         repository = repository,
+                        evidenciaRepository = evidenciaRepository,
                         modifier = Modifier.padding(padding)
                     )
                 }

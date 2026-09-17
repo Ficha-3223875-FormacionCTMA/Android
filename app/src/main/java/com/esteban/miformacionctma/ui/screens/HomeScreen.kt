@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.esteban.miformacionctma.data.local.entity.ActividadEntity
 import com.esteban.miformacionctma.repository.ActividadRepository
+import com.esteban.miformacionctma.repository.EvidenciaRepository
 
 private val ActividadEntity.nombre: String
     get() {
@@ -26,6 +27,7 @@ data class InfoItem(
 @Composable
 fun HomeScreen(
     repository: ActividadRepository,
+    evidenciaRepository: EvidenciaRepository,
     modifier: Modifier = Modifier
 ) {
 
@@ -166,6 +168,15 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("💾 Mis Actividades (${actividades.size})")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = { seccion = "evidencias"; seleccionado = null },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("📷 Evidencia fotográfica")
         }
 
         Spacer(modifier = Modifier.height(25.dp))
@@ -453,6 +464,13 @@ Verificar que un usuario pueda iniciar sesión y utilizar las opciones principal
                     }
                 }
             }   // ← cierra la rama "actividades"
+
+            "evidencias" -> {
+                EvidenciaScreen(
+                    actividades = actividades,
+                    repository = evidenciaRepository
+                )
+            }
 
         }   // ← cierra el when (seccion)
 
